@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit bootstrap="vendor/autoload.php" colors="true">
+    <testsuites>
+        <testsuite name="All Argvs Tests">
+            <directory>tests/ArgvsTests</directory>
+        </testsuite>
+    </testsuites>
+
+    <filter>
+        <whitelist>
+            <directory>src/Argvs</directory>
+            <exclude>
+                <directory>tests/ArgvsTests</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+</phpunit>
