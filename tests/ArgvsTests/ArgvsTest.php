@@ -30,6 +30,33 @@ class ArgvsTest extends TestCase
         $this->assertEquals('23', $inst->getArg('--age'));
     }
 
+    public function testNormalAddAndRemoveArgument()
+    {
+        $args = [
+            'foo.php',
+            '--foo=bar',
+            '--name=Joe',
+            '--age=23'
+        ];
+        $inst = Argvs::getInstance($args, count($args));
+        $arguments = $inst->getArgs();
+        $this->assertEquals('foo.php', $inst->getScript());
+        /** @noinspection PhpParamsInspection */
+        $this->assertCount(3, $arguments);
+        $this->assertEquals('bar', $inst->getArg('--foo'));
+        $this->assertEquals('bar', $inst->getArg('-foo'));
+        $this->assertEquals('bar', $inst->getArg('foo'));
+        $this->assertTrue($inst->removeArg('foo'));
+        $this->assertCount(2, $inst->getArgs());
+        $this->assertNull($inst->getArg('foo'));
+
+        $inst->addArg('foo', 'bar');
+        $this->assertCount(3, $arguments);
+        $this->assertEquals('bar', $inst->getArg('--foo'));
+        $this->assertEquals('bar', $inst->getArg('-foo'));
+        $this->assertEquals('bar', $inst->getArg('foo'));
+    }
+
     public function testNormalRemoveLeadingDashes()
     {
         $args = [

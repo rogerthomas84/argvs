@@ -183,6 +183,35 @@ class Argvs implements ArgvInterface
     }
 
     /**
+     * Remove an argument from the stack.
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function removeArg($key)
+    {
+        if ($this->stripDashes === true) {
+            $key = $this->removeLeadingDash($key);
+        }
+        if (array_key_exists($key . '|Argvs|0', $this->tmp)) {
+            unset($this->tmp[$key . '|Argvs|0']);
+        }
+        if (array_key_exists($key . '|Argvs|1', $this->tmp)) {
+            unset($this->tmp[$key . '|Argvs|1']);
+        }
+        $found = false;
+        foreach ($this->getArgs() as $n => $argument) {
+            if (!array_key_exists($key, $argument)) {
+                continue;
+            }
+
+            $found = true;
+            unset($this->args[$n]);
+        }
+        return $found;
+    }
+
+    /**
      * Get an argument. If multiple matches are found, return an array of the
      * values, otherwise return the string of the value. If none were found,
      * just returns null.
