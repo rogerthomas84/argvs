@@ -14,6 +14,16 @@ class Argvs implements ArgvInterface
     protected static $_instance = null;
 
     /**
+     * Holds flags to help identify parameters..
+     *
+     * @var string[][]
+     */
+    private $flagPotentials = [
+        'help' => ['help', '--help', '-help'],
+        'verbose' => ['verbose', '-verbose', '--verbose', '-v', '--v']
+    ];
+
+    /**
      * Holds the arguments, minus the script name.
      *
      * @example [
@@ -42,6 +52,13 @@ class Argvs implements ArgvInterface
     protected $tmp = [];
 
     /**
+     * An array of passed flags.
+     *
+     * @var string[]
+     */
+    protected $flags = [];
+
+    /**
      * The name of the script that's been executed.
      *
      * @example `my-script.php`
@@ -56,6 +73,14 @@ class Argvs implements ArgvInterface
      * @var bool
      */
     protected $help = false;
+
+    /**
+     * Has the parameter of `--v`, `-v`,`--verbose` or `-verbose` been passed
+     * into the parameters?
+     *
+     * @var bool
+     */
+    protected $verbose = false;
 
     /**
      * When accepting parameters, should `--` or `-` be removed?
@@ -75,7 +100,7 @@ class Argvs implements ArgvInterface
      * @param int|null $num
      * @param bool $stripLeadingDashes (optional) default true.
      */
-    protected function __construct(array $args = null, $num = null, $stripLeadingDashes = true)
+    protected function __construct(array $args = null, int $num = null, bool $stripLeadingDashes = true)
     {
         if (is_array($args) && count($args) === $num) {
             $this->stripDashes = $stripLeadingDashes;
@@ -84,12 +109,59 @@ class Argvs implements ArgvInterface
     }
 
     /**
+     * Add a flag to the stack.
+     *
+     * @param string $flag
+     * @return $this
+     */
+    public function addFlag(string $flag): Argvs
+    {
+        $this->flags[] = $flag;
+        return $this;
+    }
+
+    /**
+     * Has a flag been passed?
+     *
+     * @param string $flag
+     * @return bool
+     */
+    public function hasFlag(string $flag): bool
+    {
+        if ($this->stripDashes) {
+            return in_array($this->removeLeadingDash($flag), $this->flags);
+        }
+        return in_array($flag, $this->flags);
+    }
+
+    /**
+     * Remove a flag.
+     *
+     * @param string $flag
+     * @return $this
+     */
+    public function removeFlag(string $flag): Argvs
+    {
+        $remove = [$flag];
+        if ($this->stripDashes) {
+            $remove[] = $this->removeLeadingDash($flag);
+        }
+        foreach ($this->flags as $k => $v) {
+            if (in_array($v, $remove)) {
+                unset($this->flags[$k]);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Process the array of arguments into the stack.
      *
      * @param array $args
      * @return int
      */
-    protected function processArguments(array $args)
+    protected function processArguments(array $args): int
     {
         if (count($args) > 0) {
             $this->script = $args[0];
@@ -98,8 +170,16 @@ class Argvs implements ArgvInterface
 
         foreach ($args as $arg) {
             if (strstr($arg, '=') === false) {
-                if (in_array('help', ['help', '--help', '-help'])) {
+                if (in_array($arg, $this->flagPotentials['help'])) {
                     $this->help = true;
+                }
+                if (in_array($arg, $this->flagPotentials['verbose'])) {
+                    $this->verbose = true;
+                }
+                if ($this->stripDashes === true) {
+                    $this->flags[] = $this->removeLeadingDash($arg);
+                } else {
+                    $this->flags[] = $arg;
                 }
                 continue;
             }
@@ -118,14 +198,9 @@ class Argvs implements ArgvInterface
      * @param string $val
      * @return string
      */
-    protected function removeLeadingDash($val)
+    protected function removeLeadingDash(string $val): string
     {
-        if (substr($val, 0, 2) === '--') {
-            $val = substr($val, 2);
-        } elseif (substr($val, 0, 1) === '-') {
-            $val = substr($val, 1);
-        }
-        return $val;
+        return ltrim($val, '-');
     }
 
     /**
@@ -136,7 +211,7 @@ class Argvs implements ArgvInterface
      * @param string $value
      * @return $this
      */
-    public function addArg($key, $value)
+    public function addArg($key, $value): Argvs
     {
         if ($this->stripDashes === true) {
             $key = $this->removeLeadingDash($key);
@@ -156,7 +231,7 @@ class Argvs implements ArgvInterface
      * ]
      * @return array
      */
-    public function getArgs()
+    public function getArgs(): array
     {
         return $this->args;
     }
@@ -177,9 +252,19 @@ class Argvs implements ArgvInterface
      *
      * @return bool
      */
-    public function hasHelp()
+    public function hasHelp(): bool
     {
         return $this->help;
+    }
+
+    /**
+     * Has verbose been passed as a parameter?
+     *
+     * @return bool
+     */
+    public function hasVerbose(): bool
+    {
+        return $this->verbose;
     }
 
     /**
@@ -188,7 +273,7 @@ class Argvs implements ArgvInterface
      * @param string $key
      * @return bool
      */
-    public function removeArg($key)
+    public function removeArg(string $key): bool
     {
         if ($this->stripDashes === true) {
             $key = $this->removeLeadingDash($key);
@@ -234,6 +319,7 @@ class Argvs implements ArgvInterface
             return $this->tmp[$cacheKey];
         }
         $matches = [];
+        /** @noinspection PhpUnusedLocalVariableInspection */
         foreach ($this->getArgs() as $n => $argument) {
             if (!array_key_exists($key, $argument)) {
                 continue;
@@ -267,7 +353,8 @@ class Argvs implements ArgvInterface
         $this->args = [];
         $this->tmp = [];
         $this->script = null;
-        $this->help = null;
+        $this->help = false;
+        $this->verbose = false;
         $this->stripDashes = $stripLeadingDashes;
         if (is_array($args) && count($args) === $num) {
             $this->processArguments($args);

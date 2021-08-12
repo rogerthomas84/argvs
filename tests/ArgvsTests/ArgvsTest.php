@@ -1,9 +1,8 @@
 <?php
 
-namespace ReignTests;
+namespace ArgvsTests;
 
 use Argvs\Argvs;
-use Exception;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -23,7 +22,6 @@ class ArgvsTest extends TestCase
         $inst = Argvs::getInstance($args, count($args));
         $arguments = $inst->getArgs();
         $this->assertEquals('foo.php', $inst->getScript());
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(3, $arguments);
         $this->assertEquals('bar', $inst->getArg('--foo'));
         $this->assertEquals('Joe', $inst->getArg('--name'));
@@ -41,7 +39,6 @@ class ArgvsTest extends TestCase
         $inst = Argvs::getInstance($args, count($args));
         $arguments = $inst->getArgs();
         $this->assertEquals('foo.php', $inst->getScript());
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(3, $arguments);
         $this->assertEquals('bar', $inst->getArg('--foo'));
         $this->assertEquals('bar', $inst->getArg('-foo'));
@@ -68,7 +65,6 @@ class ArgvsTest extends TestCase
         $inst = Argvs::getInstance($args, count($args), true);
         $arguments = $inst->getArgs();
         $this->assertEquals('foo.php', $inst->getScript());
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(3, $arguments);
         $this->assertEquals('bar', $inst->getArg('foo'));
         $this->assertEquals('Joe', $inst->getArg('name'));
@@ -92,10 +88,8 @@ class ArgvsTest extends TestCase
 
         $this->assertEquals('foo.php', $inst->getScript());
 
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(3, $arguments);
 
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(2, $inst->getArg('--name')); // Joe, Jane
 
         $this->assertEquals('bar', $inst->getArg('--foo'));
@@ -116,7 +110,6 @@ class ArgvsTest extends TestCase
 
         $this->assertEquals('foo.php', $inst->getScript());
 
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(3, $arguments);
 
         $this->assertEquals('bar', $inst->getArg('--foo'));
@@ -134,7 +127,6 @@ class ArgvsTest extends TestCase
         $arguments = $inst->getArgs();
 
         $this->assertEquals('foo.php', $inst->getScript());
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(1, $arguments);
         $this->assertEquals('Joe', $inst->getArg('--name'));
         $this->assertTrue($inst->hasHelp());
@@ -148,9 +140,123 @@ class ArgvsTest extends TestCase
         $arguments = $instTwo->getArgs();
 
         $this->assertEquals('foo.php', $instTwo->getScript());
-        /** @noinspection PhpParamsInspection */
         $this->assertCount(1, $arguments);
         $this->assertEquals('Joe', $instTwo->getArg('--name'));
         $this->assertTrue($instTwo->hasHelp());
+
+
+        $argsThree = [
+            'foo.php',
+            '--name=Joe'
+        ];
+        $instThree = Argvs::getInstance($argsThree, count($argsThree));
+        $arguments = $instThree->getArgs();
+
+        $this->assertEquals('foo.php', $instThree->getScript());
+        $this->assertCount(1, $arguments);
+        $this->assertEquals('Joe', $instThree->getArg('--name'));
+        $this->assertFalse($instThree->hasHelp());
+
+        $argsFour = [
+            'foo.php',
+            '--name=Joe',
+        ];
+        $instFour = Argvs::getInstance($argsFour, count($argsFour));
+        $arguments = $instFour->getArgs();
+
+        $this->assertEquals('foo.php', $instFour->getScript());
+        $this->assertCount(1, $arguments);
+        $this->assertEquals('Joe', $instFour->getArg('--name'));
+        $this->assertFalse($instFour->hasHelp());
+    }
+
+    public function testVerboseFunction()
+    {
+        $args = [
+            'foo.php',
+            '--verbose',
+            '--name=Joe'
+        ];
+        $inst = Argvs::getInstance($args, count($args));
+        $arguments = $inst->getArgs();
+
+        $this->assertEquals('foo.php', $inst->getScript());
+        $this->assertCount(1, $arguments);
+        $this->assertEquals('Joe', $inst->getArg('--name'));
+        $this->assertTrue($inst->hasVerbose());
+
+        $argsTwo = [
+            'foo.php',
+            '--name=Joe',
+            '--verbose'
+        ];
+        $instTwo = Argvs::getInstance($argsTwo, count($argsTwo));
+        $arguments = $instTwo->getArgs();
+
+        $this->assertEquals('foo.php', $instTwo->getScript());
+        $this->assertCount(1, $arguments);
+        $this->assertEquals('Joe', $instTwo->getArg('--name'));
+        $this->assertTrue($instTwo->hasVerbose());
+
+
+        $argsThree = [
+            'foo.php',
+            '--name=Joe'
+        ];
+        $instThree = Argvs::getInstance($argsThree, count($argsThree));
+        $arguments = $instThree->getArgs();
+
+        $this->assertEquals('foo.php', $instThree->getScript());
+        $this->assertCount(1, $arguments);
+        $this->assertEquals('Joe', $instThree->getArg('--name'));
+        $this->assertFalse($instThree->hasVerbose());
+
+        $argsFour = [
+            'foo.php',
+            '--name=Joe',
+        ];
+        $instFour = Argvs::getInstance($argsFour, count($argsFour));
+        $arguments = $instFour->getArgs();
+
+        $this->assertEquals('foo.php', $instFour->getScript());
+        $this->assertCount(1, $arguments);
+        $this->assertEquals('Joe', $instFour->getArg('--name'));
+        $this->assertFalse($instFour->hasVerbose());
+    }
+
+    public function testFlagFunctions()
+    {
+        $args = [
+            'foo.php',
+            '--verbose',
+            '--help',
+            '--print'
+        ];
+        $inst = Argvs::getInstance($args, count($args));
+
+        $this->assertFalse($inst->hasFlag('--foobar'));
+        $this->assertTrue($inst->hasFlag('--verbose'));
+        $this->assertTrue($inst->hasFlag('-verbose'));
+        $this->assertTrue($inst->hasFlag('verbose'));
+        $this->assertTrue($inst->hasFlag('--help'));
+        $this->assertTrue($inst->hasFlag('-help'));
+        $this->assertTrue($inst->hasFlag('help'));
+        $this->assertTrue($inst->hasFlag('--print'));
+        $this->assertTrue($inst->hasFlag('-print'));
+        $this->assertTrue($inst->hasFlag('print'));
+
+        $inst->removeFlag('verbose');
+        $inst->removeFlag('help');
+        $inst->removeFlag('print');
+
+        $this->assertFalse($inst->hasFlag('--verbose'));
+        $this->assertFalse($inst->hasFlag('-verbose'));
+        $this->assertFalse($inst->hasFlag('verbose'));
+        $this->assertFalse($inst->hasFlag('--help'));
+        $this->assertFalse($inst->hasFlag('-help'));
+        $this->assertFalse($inst->hasFlag('help'));
+        $this->assertFalse($inst->hasFlag('--print'));
+        $this->assertFalse($inst->hasFlag('-print'));
+        $this->assertFalse($inst->hasFlag('print'));
     }
 }
